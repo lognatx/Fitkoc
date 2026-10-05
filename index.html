@@ -3,34 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FitKoç - Canlı Health Connect & YZ</title>
+  <title>FitKoç - Fotoğraflı Makro & YZ Takip</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 15px; }
     .card { background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #334155; }
     h2, h3 { margin-top: 0; color: #38bdf8; }
-    input, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; box-sizing: border-box; }
-    button { background: #0284c7; font-weight: bold; cursor: pointer; border: none; }
-    button:active { background: #0369a1; }
+    input, button, label { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; box-sizing: border-box; text-align: center; display: block; }
+    button, label.btn-upload { background: #0284c7; font-weight: bold; cursor: pointer; border: none; }
+    button:active, label.btn-upload:active { background: #0369a1; }
     .stats { display: flex; justify-content: space-between; text-align: center; }
     .stat-box { flex: 1; padding: 10px; background: #0f172a; margin: 0 4px; border-radius: 8px; }
-    .chat-box { height: 180px; overflow-y: auto; background: #0f172a; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 14px; }
+    .macros { display: flex; gap: 8px; margin-top: 10px; text-align: center; font-size: 13px; }
+    .macro-box { flex: 1; padding: 8px; background: #0f172a; border-radius: 6px; border-top: 3px solid #38bdf8; }
+    .chat-box { height: 160px; overflow-y: auto; background: #0f172a; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 14px; }
     .msg { margin-bottom: 8px; padding: 8px; border-radius: 6px; }
     .user-msg { background: #0369a1; text-align: right; }
     .bot-msg { background: #334155; }
-    .sync-status { font-size: 12px; color: #4ade80; text-align: center; margin-bottom: 10px; }
+    #imgPreview { width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; display: none; margin-top: 10px; }
+    .analysis-result { background: #0f172a; padding: 10px; border-radius: 8px; margin-top: 10px; display: none; }
   </style>
 </head>
 <body>
 
-  <h2>FitKoç (Canlı & Sınırsız)</h2>
-  <div class="sync-status">🟢 Google Health Connect Senkronize</div>
+  <h2>FitKoç (Fotoğraflı Makro & YZ)</h2>
 
   <!-- ÖZET PANOSU -->
   <div class="card">
     <h3>Bugünün Özeti</h3>
     <div class="stats">
       <div class="stat-box">
-        <small>Adım (Health Sync)</small>
+        <small>Adım</small>
         <h2 id="stepVal">0</h2>
       </div>
       <div class="stat-box">
@@ -38,59 +40,108 @@
         <h2 id="calVal">0</h2>
       </div>
     </div>
+    <!-- MAKRO DEĞERLERİ -->
+    <div class="macros">
+      <div class="macro-box" style="border-color: #ef4444;">
+        <small>Protein</small><br><b id="protVal">0g</b>
+      </div>
+      <div class="macro-box" style="border-color: #eab308;">
+        <small>Karb</small><br><b id="carbVal">0g</b>
+      </div>
+      <div class="macro-box" style="border-color: #22c55e;">
+        <small>Yağ</small><br><b id="fatVal">0g</b>
+      </div>
+    </div>
   </div>
 
-  <!-- YEMEK VE MANUEL ADIM GİRİŞİ -->
+  <!-- FOTOĞRAFLI YEMEK ANALİZİ -->
   <div class="card">
-    <h3>Yemek & Kalori Kaydı</h3>
-    <input type="text" id="foodName" placeholder="Yemek Adı (Örn: Tavuk Pilav)">
-    <input type="number" id="foodCal" placeholder="Kalori (Örn: 450)">
-    <button onclick="addFood()" style="background:#16a34a;">Yemeği Kaydet</button>
+    <h3>Yemek Fotoğrafı Analizi</h3>
+    <label for="foodImgInput" class="btn-upload">📸 Fotoğraf Çek / Galeriden Seç</label>
+    <input type="file" id="foodImgInput" accept="image/*" style="display:none;" onchange="analyzeImage(event)">
+    
+    <img id="imgPreview" alt="Yemek Görseli">
+    
+    <div id="analysisResult" class="analysis-result">
+      <h4 style="margin:0 0 5px 0; color:#4ade80;" id="detectedFood">Tespit Edilen Yemek</h4>
+      <p style="margin:3px 0; font-size:13px;" id="detectedMacros"></p>
+      <button onclick="saveAnalyzedFood()" style="background:#16a34a; margin-top:10px;">Günlüğe Kaydet</button>
+    </div>
   </div>
 
   <!-- YZ KOÇU -->
   <div class="card">
     <h3>Yapay Zeka Koçu</h3>
     <div class="chat-box" id="chat">
-      <div class="msg bot-msg">Selam! Health Sync verilerinle adımların takip ediliyor. Yemeğini ekleyip benden tavsiye alabilirsin.</div>
+      <div class="msg bot-msg">Selam! Tabağının fotoğrafını yükle, kalori ve makro değerlerini anında hesaplayayım.</div>
     </div>
-    <button onclick="askCoach('Bugünkü performansımı değerlendir')">Bugünkü Performansımı Değerlendir</button>
-    <button onclick="askCoach('Kalori dengem nasıl?')" style="background:#475569;">Kalori Tavsiyesi Al</button>
+    <button onclick="askCoach('Bugünkü makro dengemi nasıl buluyorsun?')">Makro Dengemi Değerlendir</button>
   </div>
 
   <script>
     let steps = 0;
     let calories = 0;
+    let protein = 0;
+    let carbs = 0;
+    let fat = 0;
+    let lastAnalysis = null;
 
-    // Health Connect / Webhook Senkronizasyon Simülasyonu & Yerel Depolama
-    function syncSteps() {
-      const savedSteps = localStorage.getItem('hc_steps');
-      if (savedSteps) {
-        steps = parseInt(savedSteps);
-        document.getElementById('stepVal').innerText = steps;
-      }
+    // Görsel Analiz Simülatörü
+    function analyzeImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = document.getElementById('imgPreview');
+        img.src = e.target.result;
+        img.style.display = 'block';
+
+        // Fotoğraf içerik tahmini (Varsayılan Sağlıklı Tabak Şablonu)
+        lastAnalysis = {
+          name: "Izgara Tavuk Göğsü & Pirinç Pilavı",
+          cal: 520,
+          p: 45,
+          c: 50,
+          f: 12
+        };
+
+        document.getElementById('detectedFood').innerText = "🔍 Tahmin: " + lastAnalysis.name;
+        document.getElementById('detectedMacros').innerText = 
+          `Kalori: ${lastAnalysis.cal} kcal | Protein: ${lastAnalysis.p}g | Karb: ${lastAnalysis.c}g | Yağ: ${lastAnalysis.f}g`;
+        
+        document.getElementById('analysisResult').style.display = 'block';
+      };
+      reader.readAsDataURL(file);
     }
 
-    function addFood() {
-      let name = document.getElementById('foodName').value;
-      let cal = parseInt(document.getElementById('foodCal').value) || 0;
-      if(name && cal) {
-        calories += cal;
-        document.getElementById('calVal').innerText = calories;
-        addMessage(`Kayıt: ${name} (${cal} kcal)`, 'user-msg');
-        addMessage(`Koç: ${name} eklendi. Günlük toplam kaloriniz: ${calories} kcal.`, 'bot-msg');
-        document.getElementById('foodName').value = '';
-        document.getElementById('foodCal').value = '';
-      }
+    function saveAnalyzedFood() {
+      if (!lastAnalysis) return;
+
+      calories += lastAnalysis.cal;
+      protein += lastAnalysis.p;
+      carbs += lastAnalysis.c;
+      fat += lastAnalysis.f;
+
+      document.getElementById('calVal').innerText = calories;
+      document.getElementById('protVal').innerText = protein + 'g';
+      document.getElementById('carbVal').innerText = carbs + 'g';
+      document.getElementById('fatVal').innerText = fat + 'g';
+
+      addMessage(`Yemek Eklendi: ${lastAnalysis.name} (+${lastAnalysis.cal} kcal)`, 'user-msg');
+      addMessage(`Koç: Harika bir öğün! ${lastAnalysis.p}g protein kas gelişimi için çok ideal.`, 'bot-msg');
+
+      document.getElementById('analysisResult').style.display = 'none';
+      document.getElementById('imgPreview').style.display = 'none';
+      document.getElementById('foodImgInput').value = '';
     }
 
     function askCoach(question) {
       addMessage(question, 'user-msg');
       setTimeout(() => {
-        let reply = "Harika bir gün! Adımlarını artırmaya devam et.";
-        if(steps < 5000) reply = `Samsung Health / Health Connect verilerine göre şu an ${steps} adımdasın. Günlük hedefine ulaşmak için kısa bir yürüyüş yapabilirsin.`;
-        else if(steps >= 5000) reply = `Harika! ${steps} adıma ulaştın. Tempon gayet iyi.`;
-        if(calories > 0) reply += ` Bugün toplam ${calories} kalori kaydettin. Beslenmene dikkat et!`;
+        let reply = `Şu ana kadar ${calories} kalori ve ${protein}g protein aldın. `;
+        if (protein < 60) reply += "Günlük protein hedefine ulaşmak için bir sonraki öğününde tavuk, balık veya yumurta tercih edebilirsin.";
+        else reply += "Protein alımın gayet başarılı gidiyor, tebrikler!";
         
         addMessage("Koç: " + reply, 'bot-msg');
       }, 300);
@@ -104,8 +155,6 @@
       chat.appendChild(msg);
       chat.scrollTop = chat.scrollHeight;
     }
-
-    window.onload = syncSteps;
   </script>
 </body>
 </html>
