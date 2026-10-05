@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FitKoç - Canlı Health Connect & YZ</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; padding: 15px; }
+    .card { background: #1e293b; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #334155; }
+    h2, h3 { margin-top: 0; color: #38bdf8; }
+    input, button { width: 100%; padding: 12px; margin: 5px 0; border-radius: 8px; border: 1px solid #475569; background: #0f172a; color: #fff; box-sizing: border-box; }
+    button { background: #0284c7; font-weight: bold; cursor: pointer; border: none; }
+    button:active { background: #0369a1; }
+    .stats { display: flex; justify-content: space-between; text-align: center; }
+    .stat-box { flex: 1; padding: 10px; background: #0f172a; margin: 0 4px; border-radius: 8px; }
+    .chat-box { height: 180px; overflow-y: auto; background: #0f172a; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 14px; }
+    .msg { margin-bottom: 8px; padding: 8px; border-radius: 6px; }
+    .user-msg { background: #0369a1; text-align: right; }
+    .bot-msg { background: #334155; }
+    .sync-status { font-size: 12px; color: #4ade80; text-align: center; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+  <h2>FitKoç (Canlı & Sınırsız)</h2>
+  <div class="sync-status">🟢 Google Health Connect Senkronize</div>
+
+  <!-- ÖZET PANOSU -->
+  <div class="card">
+    <h3>Bugünün Özeti</h3>
+    <div class="stats">
+      <div class="stat-box">
+        <small>Adım (Health Sync)</small>
+        <h2 id="stepVal">0</h2>
+      </div>
+      <div class="stat-box">
+        <small>Kalori</small>
+        <h2 id="calVal">0</h2>
+      </div>
+    </div>
+  </div>
+
+  <!-- YEMEK VE MANUEL ADIM GİRİŞİ -->
+  <div class="card">
+    <h3>Yemek & Kalori Kaydı</h3>
+    <input type="text" id="foodName" placeholder="Yemek Adı (Örn: Tavuk Pilav)">
+    <input type="number" id="foodCal" placeholder="Kalori (Örn: 450)">
+    <button onclick="addFood()" style="background:#16a34a;">Yemeği Kaydet</button>
+  </div>
+
+  <!-- YZ KOÇU -->
+  <div class="card">
+    <h3>Yapay Zeka Koçu</h3>
+    <div class="chat-box" id="chat">
+      <div class="msg bot-msg">Selam! Health Sync verilerinle adımların takip ediliyor. Yemeğini ekleyip benden tavsiye alabilirsin.</div>
+    </div>
+    <button onclick="askCoach('Bugünkü performansımı değerlendir')">Bugünkü Performansımı Değerlendir</button>
+    <button onclick="askCoach('Kalori dengem nasıl?')" style="background:#475569;">Kalori Tavsiyesi Al</button>
+  </div>
+
+  <script>
+    let steps = 0;
+    let calories = 0;
+
+    // Health Connect / Webhook Senkronizasyon Simülasyonu & Yerel Depolama
+    function syncSteps() {
+      const savedSteps = localStorage.getItem('hc_steps');
+      if (savedSteps) {
+        steps = parseInt(savedSteps);
+        document.getElementById('stepVal').innerText = steps;
+      }
+    }
+
+    function addFood() {
+      let name = document.getElementById('foodName').value;
+      let cal = parseInt(document.getElementById('foodCal').value) || 0;
+      if(name && cal) {
+        calories += cal;
+        document.getElementById('calVal').innerText = calories;
+        addMessage(`Kayıt: ${name} (${cal} kcal)`, 'user-msg');
+        addMessage(`Koç: ${name} eklendi. Günlük toplam kaloriniz: ${calories} kcal.`, 'bot-msg');
+        document.getElementById('foodName').value = '';
+        document.getElementById('foodCal').value = '';
+      }
+    }
+
+    function askCoach(question) {
+      addMessage(question, 'user-msg');
+      setTimeout(() => {
+        let reply = "Harika bir gün! Adımlarını artırmaya devam et.";
+        if(steps < 5000) reply = `Samsung Health / Health Connect verilerine göre şu an ${steps} adımdasın. Günlük hedefine ulaşmak için kısa bir yürüyüş yapabilirsin.`;
+        else if(steps >= 5000) reply = `Harika! ${steps} adıma ulaştın. Tempon gayet iyi.`;
+        if(calories > 0) reply += ` Bugün toplam ${calories} kalori kaydettin. Beslenmene dikkat et!`;
+        
+        addMessage("Koç: " + reply, 'bot-msg');
+      }, 300);
+    }
+
+    function addMessage(text, className) {
+      let chat = document.getElementById('chat');
+      let msg = document.createElement('div');
+      msg.className = 'msg ' + className;
+      msg.innerText = text;
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    window.onload = syncSteps;
+  </script>
+</body>
+</html>
